@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.json.OFormat
 
 sealed trait AuditResult
 object AuditResult {
@@ -66,8 +67,10 @@ trait AuditConnector {
       hc: HeaderCarrier,
       ec: ExecutionContext,
       writes: AuditFormat[T]
-  ): Unit =
+  ): Unit = {
+    given OFormat[T] = writes.format
     sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
+  }
 
   private def sendExplicitAudit(auditType: String, detail: JsObject)(implicit
       hc: HeaderCarrier,

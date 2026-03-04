@@ -16,10 +16,6 @@
 
 package uk.gov.hmrc.play.audit.http.validation
 
-import play.api.libs.json.{JsObject, JsResult, JsValue, OFormat}
+import play.api.libs.json.OFormat
 
-class AuditFormat[T](format: OFormat[T]) extends OFormat[T] {
-  override def writes(o: T): JsObject = format.writes(o)
-
-  override def reads(json: JsValue): JsResult[T] = format.reads(json)
-}
+class AuditFormat[T](val format: OFormat[T])

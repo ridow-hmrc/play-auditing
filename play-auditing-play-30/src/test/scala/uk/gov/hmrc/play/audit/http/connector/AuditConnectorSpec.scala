@@ -301,7 +301,6 @@ class AuditConnectorSpec
     )
 
     "call AuditChannel.send with tags read from headerCarrier and serialize T" in {
-      val writes = Json.writes[MyExampleAudit]
 
       createConnector(enabledConfig).sendExplicitAudit(
         "theAuditType",
@@ -323,11 +322,10 @@ class AuditConnectorSpec
     }
 
     "add auditProvider if specified in config" in {
-      val writes = Json.writes[MyExampleAudit]
 
       createConnector(enabledConfigWithProvider).sendExplicitAudit(
         "theAuditType",
-        MyExampleAudit("Agent", "123")
+        Subscription("name", 40, List("list"), Set("Set"), Address("street", "postcode"))
       )
 
       verifyAuditProviderIs("config-provider")

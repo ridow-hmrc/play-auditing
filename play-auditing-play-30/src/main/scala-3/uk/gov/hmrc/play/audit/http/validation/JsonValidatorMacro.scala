@@ -29,24 +29,22 @@ import scala.util.Random
 
 object JsonValidatorMacro:
 
-  private val cipSchemaAnnotation                          = "uk.gov.hmrc.audit.http.validation.CipAuditEventSchema"
-  private val nonValidatedAnnotation = "uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated"
+  private val cipSchemaAnnotation                  = "uk.gov.hmrc.audit.http.validation.CipAuditEventSchema"
+  private val nonValidatedAnnotation               = "uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated"
   inline def nonvalidatedFormat[T]: AuditFormat[T] = ${ unvalidatedFormatImpl[T] }
-  
+
   def unvalidatedFormatImpl[T: Type](using Quotes): Expr[AuditFormat[T]] =
     import quotes.reflect.*
     val typeSymbol = TypeRepr.of[T].typeSymbol
     if !typeSymbol.annotations.exists(_.tpe.show == nonValidatedAnnotation) then
       report.errorAndAbort(s"${typeSymbol.name} must be annotated with @$nonValidatedAnnotation")
-    
-    
+
     val format = JsMacroImpl.format[T]
-    
+
     '{
       new AuditFormat[T]($format)
     }
-  
-  
+
   inline def generateValidatedJson[T]: AuditFormat[T] = ${ generateImpl[T] }
 
   def generateImpl[T: Type](using Quotes): Expr[AuditFormat[T]] =
@@ -101,7 +99,6 @@ object JsonValidatorMacro:
     '{
       new AuditFormat[T]($format)
     }
-
 
   private def loadSchema[T: Type](using Quotes): URI = {
     import quotes.reflect.*
