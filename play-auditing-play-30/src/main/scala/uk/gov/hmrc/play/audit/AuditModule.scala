@@ -24,11 +24,10 @@ import _root_.uk.gov.hmrc.play.audit.http.connector.{AuditChannel, AuditConnecto
 
 import javax.inject.{Inject, Singleton}
 
-
 class AuditModule extends Module {
   override def bindings(
-    environment  : Environment,
-    configuration: Configuration
+      environment: Environment,
+      configuration: Configuration
   ): Seq[Binding[_]] = Seq(
     bind[AuditChannel].to[DefaultAuditChannel],
     bind[AuditConnector].to[DefaultAuditConnector],
@@ -37,17 +36,17 @@ class AuditModule extends Module {
 }
 
 @Singleton
-class DefaultAuditChannel @Inject()(
-  val auditingConfig   : AuditingConfig,
-  val materializer     : Materializer,
-  val lifecycle        : ApplicationLifecycle,
-  val datastreamMetrics: DatastreamMetrics
+class DefaultAuditChannel @Inject() (
+    val auditingConfig: AuditingConfig,
+    val materializer: Materializer,
+    val lifecycle: ApplicationLifecycle,
+    val datastreamMetrics: DatastreamMetrics
 ) extends AuditChannel
 
 @Singleton
-class DefaultAuditConnector @Inject()(
-  val auditingConfig   : AuditingConfig,
-  val auditChannel     : AuditChannel,
-  val lifecycle        : ApplicationLifecycle,
-  val datastreamMetrics: DatastreamMetrics
+class DefaultAuditConnector @Inject() (
+    val auditingConfig: AuditingConfig,
+    val auditChannel: AuditChannel,
+    val lifecycle: ApplicationLifecycle,
+    val datastreamMetrics: DatastreamMetrics
 ) extends AuditConnector

@@ -22,5 +22,7 @@ import uk.gov.hmrc.audit.HandlerResult
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditHandler {
-  def sendEvent(event: JsValue)(implicit ec: ExecutionContext): Future[HandlerResult]
+  def sendEvent(event: JsValue)(implicit
+      ec: ExecutionContext
+  ): Future[HandlerResult]
 }

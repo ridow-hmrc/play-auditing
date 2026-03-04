@@ -27,11 +27,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class LoggingHandlerSpec extends AnyWordSpec with MockitoSugar {
 
   val mockLog: Logger = mock[Logger]
-  val loggingHandler = new LoggingHandler(mockLog)
+  val loggingHandler  = new LoggingHandler(mockLog)
 
   "LoggingHandler" should {
     "log the event" in {
-      val expectedLogContent = """DS_EventMissed_AuditRequestFailure : audit item : "FAILED_EVENT""""
+      val expectedLogContent =
+        """DS_EventMissed_AuditRequestFailure : audit item : "FAILED_EVENT""""
 
       loggingHandler.sendEvent(JsString("FAILED_EVENT"))
 

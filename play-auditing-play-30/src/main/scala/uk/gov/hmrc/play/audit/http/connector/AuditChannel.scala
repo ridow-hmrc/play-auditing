@@ -24,32 +24,33 @@ import uk.gov.hmrc.audit.handler.{AuditHandler, DatastreamHandler, LoggingHandle
 import uk.gov.hmrc.play.audit.http.config.{AuditingConfig, BaseUri, Consumer}
 import uk.gov.hmrc.audit.{HandlerResult, WSClient}
 
-import scala.concurrent.duration.{Duration,DurationInt}
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditChannel {
-  def auditingConfig   : AuditingConfig
-  def materializer     : Materializer
-  def lifecycle        : ApplicationLifecycle
+  def auditingConfig: AuditingConfig
+  def materializer: Materializer
+  def lifecycle: ApplicationLifecycle
   def datastreamMetrics: DatastreamMetrics
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
   val defaultConnectionTimeout: Duration = 5000.millis
-  val defaultRequestTimeout   : Duration = 5000.millis
+  val defaultRequestTimeout: Duration    = 5000.millis
 
   val defaultBaseUri = BaseUri("datastream.protected.mdtp", 90, "http")
 
-  lazy val consumer: Consumer = auditingConfig.consumer.getOrElse(Consumer(defaultBaseUri))
+  lazy val consumer: Consumer =
+    auditingConfig.consumer.getOrElse(Consumer(defaultBaseUri))
 
   lazy val baseUri: BaseUri = consumer.baseUri
 
   private lazy val wsClient: WSClient = {
     implicit val m = materializer
-    val wsClient = WSClient(
+    val wsClient   = WSClient(
       connectTimeout = defaultConnectionTimeout,
       requestTimeout = defaultRequestTimeout,
-      userAgent      = auditingConfig.auditSource
+      userAgent = auditingConfig.auditSource
     )
     lifecycle.addStopHook { () =>
       logger.info("Closing play-auditing http connections...")
@@ -71,15 +72,17 @@ trait AuditChannel {
 
   lazy val loggingConnector: AuditHandler = LoggingHandler
 
-  def send(path:String, event: JsValue)(implicit ec: ExecutionContext): Future[HandlerResult] =
-    datastreamHandler(path).sendEvent(event)
+  def send(path: String, event: JsValue)(implicit
+      ec: ExecutionContext
+  ): Future[HandlerResult] =
+    datastreamHandler(path)
+      .sendEvent(event)
       .flatMap {
         case HandlerResult.Failure => loggingConnector.sendEvent(event)
         case result                => Future.successful(result)
       }
-      .recover {
-        case e: Throwable =>
-          logger.error("Error in handler code", e)
-          HandlerResult.Failure
+      .recover { case e: Throwable =>
+        logger.error("Error in handler code", e)
+        HandlerResult.Failure
       }
 }

@@ -28,18 +28,26 @@ object AuditExtensions {
       carrier.names.xSessionId -> carrier.sessionId.map(_.value).getOrElse("-"),
       "clientIP"               -> carrier.trueClientIp.getOrElse("-"),
       "clientPort"             -> carrier.trueClientPort.getOrElse("-"),
-      "Akamai-Reputation"      -> carrier.akamaiReputation.getOrElse(AkamaiReputation("-")).value,
-      carrier.names.deviceID   -> carrier.deviceID.getOrElse("-"),
-      //path is not a header but http-verbs-play-25 puts it in HeaderCarrier.otherHeaders so that play-auditing can
-      //get the request path without depending on play and without modifying http-core
-      //Modifying http-core is hard right now because it depends on play 2.6
-      "path"                   -> carrier.otherHeaders.collect { case ("path", value) => value }.headOption.getOrElse("-")
+      "Akamai-Reputation"      -> carrier.akamaiReputation
+        .getOrElse(AkamaiReputation("-"))
+        .value,
+      carrier.names.deviceID -> carrier.deviceID.getOrElse("-"),
+      // path is not a header but http-verbs-play-25 puts it in HeaderCarrier.otherHeaders so that play-auditing can
+      // get the request path without depending on play and without modifying http-core
+      // Modifying http-core is hard right now because it depends on play 2.6
+      "path" -> carrier.otherHeaders
+        .collect { case ("path", value) => value }
+        .headOption
+        .getOrElse("-")
     )
 
-    def toAuditTags(transactionName: String, path: String): Map[String, String] = {
+    def toAuditTags(
+        transactionName: String,
+        path: String
+    ): Map[String, String] = {
       auditTags ++ Map[String, String](
         TransactionName -> transactionName,
-        Path -> path
+        Path            -> path
       )
     }
 

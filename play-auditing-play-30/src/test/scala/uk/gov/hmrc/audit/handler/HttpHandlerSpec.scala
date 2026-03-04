@@ -33,15 +33,10 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class HttpHandlerSpec
-  extends AnyWordSpec
-     with Inspectors
-     with Matchers
-     with ScalaFutures
-     with MockitoSugar {
+class HttpHandlerSpec extends AnyWordSpec with Inspectors with Matchers with ScalaFutures with MockitoSugar {
 
   trait Test {
-    val wsClient = mock[WSClient]
+    val wsClient    = mock[WSClient]
     val httpHandler = new HttpHandler(
       endpointUrl = new URL("http", "localhost", 9999, "/some/path"),
       wsClient = wsClient
@@ -62,29 +57,51 @@ class HttpHandlerSpec
     )
 
     "return failure whenever WSClient url throws" in new Test {
-      val e = new IllegalArgumentException("illegal argument") // only permitted error via checked exception
+      val e = new IllegalArgumentException(
+        "illegal argument"
+      ) // only permitted error via checked exception
       when(wsClient.url(any[String])).thenThrow(e)
 
-      httpHandler.sendHttpRequest(JsString("any old thing")).futureValue shouldBe HttpResult.Failure("Error opening connection or sending request (sync)", Some(e))
+      httpHandler
+        .sendHttpRequest(JsString("any old thing"))
+        .futureValue shouldBe HttpResult.Failure(
+        "Error opening connection or sending request (sync)",
+        Some(e)
+      )
     }
 
-    "return failure whenever WSClient POST throws" in forAll(checkedPostExceptions) { e =>
+    "return failure whenever WSClient POST throws" in forAll(
+      checkedPostExceptions
+    ) { e =>
       new Test {
         val requestMock = mock[StandaloneWSRequest]
         when(wsClient.url(any[String])).thenReturn(requestMock)
         when(requestMock.post(any)(any[BodyWritable[_]])).thenThrow(e)
 
-        httpHandler.sendHttpRequest(JsString("any old thing")).futureValue shouldBe HttpResult.Failure("Error opening connection or sending request (sync)", Some(e))
+        httpHandler
+          .sendHttpRequest(JsString("any old thing"))
+          .futureValue shouldBe HttpResult.Failure(
+          "Error opening connection or sending request (sync)",
+          Some(e)
+        )
       }
     }
 
-    "return failure whenever WSClient POST returns failed future" in forAll(checkedPostExceptions ++ uncheckedPostExceptions) { e =>
+    "return failure whenever WSClient POST returns failed future" in forAll(
+      checkedPostExceptions ++ uncheckedPostExceptions
+    ) { e =>
       new Test {
         val requestMock = mock[StandaloneWSRequest]
         when(wsClient.url(any[String])).thenReturn(requestMock)
-        when(requestMock.post(any)(any[BodyWritable[_]])).thenReturn(Future.failed(e))
+        when(requestMock.post(any)(any[BodyWritable[_]]))
+          .thenReturn(Future.failed(e))
 
-        httpHandler.sendHttpRequest(JsString("any old thing")).futureValue shouldBe HttpResult.Failure("Error opening connection or sending request (async)", Some(e))
+        httpHandler
+          .sendHttpRequest(JsString("any old thing"))
+          .futureValue shouldBe HttpResult.Failure(
+          "Error opening connection or sending request (async)",
+          Some(e)
+        )
       }
     }
   }

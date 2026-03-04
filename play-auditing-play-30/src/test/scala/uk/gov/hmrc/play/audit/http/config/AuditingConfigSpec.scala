@@ -35,11 +35,11 @@ class AuditingConfigSpec extends AnyWordSpec with Matchers with MockitoSugar {
       )
 
       AuditingConfig.fromConfig(config) shouldBe AuditingConfig(
-        consumer         = Some(Consumer(BaseUri("localhost", 8100, "http"))),
-        enabled          = true,
-        auditSource      = "app-name",
+        consumer = Some(Consumer(BaseUri("localhost", 8100, "http"))),
+        enabled = true,
+        auditSource = "app-name",
         auditSentHeaders = false,
-        auditProvider    = Some("audit-provider")
+        auditProvider = Some("audit-provider")
       )
     }
 
@@ -49,9 +49,9 @@ class AuditingConfigSpec extends AnyWordSpec with Matchers with MockitoSugar {
       )
 
       AuditingConfig.fromConfig(config) shouldBe AuditingConfig(
-        consumer         = None,
-        enabled          = false,
-        auditSource      = "auditing disabled",
+        consumer = None,
+        enabled = false,
+        auditSource = "auditing disabled",
         auditSentHeaders = false
       )
     }

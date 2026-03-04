@@ -1,4 +1,5 @@
-import sbt._
+import sbt.*
+import sbt.Keys.libraryDependencies
 
 object LibDependencies {
   // we depend on http-verbs just to integrate via the AuditHooks
@@ -14,6 +15,8 @@ object LibDependencies {
 
   val play30 = Seq(
     "uk.gov.hmrc"            %% "http-verbs-play-30" % httpVerbsVersion,
+    "com.networknt"      % "json-schema-validator" % "3.0.0",
+    "org.playframework" %% "play-json"             % "3.0.6",
     "com.github.tomakehurst" %  "wiremock"           % "3.0.0-beta-7" % Test,
     "org.slf4j"              %  "slf4j-simple"       % "2.0.7"        % Test
   )

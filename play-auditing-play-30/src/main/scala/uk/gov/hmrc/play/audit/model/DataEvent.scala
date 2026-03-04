@@ -22,44 +22,44 @@ import java.time.Instant
 import play.api.libs.json._
 
 case class DataEvent(
-  auditSource  : String,
-  auditType    : String,
-  eventId      : String              = UUID.randomUUID().toString,
-  tags         : Map[String, String] = Map.empty,
-  detail       : Map[String, String] = Map.empty,
-  generatedAt  : Instant             = Instant.now(),
-  truncationLog: TruncationLog       = TruncationLog.Empty,
-  redactionLog : RedactionLog        = RedactionLog.Empty,
-  auditProvider: Option[String]      = None
+    auditSource: String,
+    auditType: String,
+    eventId: String = UUID.randomUUID().toString,
+    tags: Map[String, String] = Map.empty,
+    detail: Map[String, String] = Map.empty,
+    generatedAt: Instant = Instant.now(),
+    truncationLog: TruncationLog = TruncationLog.Empty,
+    redactionLog: RedactionLog = RedactionLog.Empty,
+    auditProvider: Option[String] = None
 )
 
 case class ExtendedDataEvent(
-  auditSource  : String,
-  auditType    : String,
-  eventId      : String              = UUID.randomUUID().toString,
-  tags         : Map[String, String] = Map.empty,
-  detail       : JsValue             = JsString(""),
-  generatedAt  : Instant             = Instant.now(),
-  truncationLog: TruncationLog       = TruncationLog.Empty,
-  redactionLog : RedactionLog        = RedactionLog.Empty,
-  auditProvider: Option[String]      = None
+    auditSource: String,
+    auditType: String,
+    eventId: String = UUID.randomUUID().toString,
+    tags: Map[String, String] = Map.empty,
+    detail: JsValue = JsString(""),
+    generatedAt: Instant = Instant.now(),
+    truncationLog: TruncationLog = TruncationLog.Empty,
+    redactionLog: RedactionLog = RedactionLog.Empty,
+    auditProvider: Option[String] = None
 )
 
 case class DataCall(
-  tags       : Map[String, String],
-  detail     : Map[String, String],
-  generatedAt: Instant
+    tags: Map[String, String],
+    detail: Map[String, String],
+    generatedAt: Instant
 )
 
 case class MergedDataEvent(
-  auditSource  : String,
-  auditType    : String,
-  eventId      : String         = UUID.randomUUID().toString,
-  request      : DataCall,
-  response     : DataCall,
-  truncationLog: TruncationLog  = TruncationLog.Empty,
-  redactionLog : RedactionLog   = RedactionLog.Empty,
-  auditProvider: Option[String] = None
+    auditSource: String,
+    auditType: String,
+    eventId: String = UUID.randomUUID().toString,
+    request: DataCall,
+    response: DataCall,
+    truncationLog: TruncationLog = TruncationLog.Empty,
+    redactionLog: RedactionLog = RedactionLog.Empty,
+    auditProvider: Option[String] = None
 )
 
 sealed trait TruncationLog {
@@ -67,7 +67,7 @@ sealed trait TruncationLog {
 
   final def asEntry: Option[TruncationLog.Entry] =
     this match {
-      case TruncationLog.Empty => None
+      case TruncationLog.Empty                             => None
       case entry @ TruncationLog.Entry(truncatedFields, _) =>
         if (truncatedFields.nonEmpty)
           Some(entry)
@@ -83,8 +83,8 @@ object TruncationLog {
   }
 
   case class Entry(
-    truncatedFields: List[String],
-    timestamp      : Instant      = Instant.now()
+      truncatedFields: List[String],
+      timestamp: Instant = Instant.now()
   ) extends TruncationLog
 
   def of(truncatedFields: List[String]): TruncationLog =
@@ -105,8 +105,8 @@ object RedactionLog {
   }
 
   case class Entry(
-    redactedFields: List[String],
-    timestamp     : Instant      = Instant.now()
+      redactedFields: List[String],
+      timestamp: Instant = Instant.now()
   ) extends RedactionLog
 
   def of(redactedFields: List[String]): RedactionLog =

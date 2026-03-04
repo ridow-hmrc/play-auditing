@@ -25,29 +25,34 @@ import uk.gov.hmrc.mdc.Mdc
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 
-
 sealed trait HttpResult
 object HttpResult {
   case class Response(statusCode: Int) extends HttpResult
-  case object Malformed extends HttpResult
-  case class Failure(msg: String, nested: Option[Throwable] = None) extends Exception(msg, nested.orNull) with HttpResult
+  case object Malformed                extends HttpResult
+  case class Failure(msg: String, nested: Option[Throwable] = None)
+      extends Exception(msg, nested.orNull)
+      with HttpResult
 }
 
 class HttpHandler(
-  endpointUrl: URL,
-  wsClient   : WSClient
+    endpointUrl: URL,
+    wsClient: WSClient
 ) {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
   val HTTP_STATUS_CONTINUE = 100
 
-  def sendHttpRequest(event: JsValue)(implicit ec: ExecutionContext): Future[HttpResult] =
+  def sendHttpRequest(
+      event: JsValue
+  )(implicit ec: ExecutionContext): Future[HttpResult] =
     try {
       logger.debug(s"Sending audit request to URL ${endpointUrl.toString}")
-      Mdc.preservingMdc(
-        wsClient.url(endpointUrl.toString)
-          .post(event)
-      )
+      Mdc
+        .preservingMdc(
+          wsClient
+            .url(endpointUrl.toString)
+            .post(event)
+        )
         .map { response =>
           val httpStatusCode = response.status
           logger.debug(s"Got status code : $httpStatusCode")
@@ -58,15 +63,25 @@ class HttpHandler(
             logger.debug(s"Got status code $httpStatusCode from HTTP server.")
             HttpResult.Response(httpStatusCode)
           } else {
-            logger.warn(s"Malformed response (status $httpStatusCode) returned from server")
+            logger.warn(
+              s"Malformed response (status $httpStatusCode) returned from server"
+            )
             HttpResult.Malformed
           }
-        }.recover {
-          case e: Throwable =>
-            HttpResult.Failure("Error opening connection or sending request (async)", Some(e))
+        }
+        .recover { case e: Throwable =>
+          HttpResult.Failure(
+            "Error opening connection or sending request (async)",
+            Some(e)
+          )
         }
     } catch {
       case e: Throwable =>
-        Future.successful(HttpResult.Failure("Error opening connection or sending request (sync)", Some(e)))
+        Future.successful(
+          HttpResult.Failure(
+            "Error opening connection or sending request (sync)",
+            Some(e)
+          )
+        )
     }
 }

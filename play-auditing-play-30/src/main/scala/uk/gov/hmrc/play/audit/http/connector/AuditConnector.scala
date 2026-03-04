@@ -17,7 +17,6 @@
 package uk.gov.hmrc.play.audit.http.connector
 
 import java.util.UUID
-
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsObject, Json, Writes}
 import uk.gov.hmrc.audit.HandlerResult
@@ -26,14 +25,17 @@ import uk.gov.hmrc.play.audit.http.config.AuditingConfig
 import uk.gov.hmrc.play.audit.model.{DataEvent, ExtendedDataEvent, MergedDataEvent}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
+import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait AuditResult
 object AuditResult {
-  case object Success extends AuditResult
+  case object Success  extends AuditResult
   case object Disabled extends AuditResult
-  case class Failure(msg: String, nested: Option[Throwable] = None) extends Exception(msg, nested.orNull) with AuditResult
+  case class Failure(msg: String, nested: Option[Throwable] = None)
+      extends Exception(msg, nested.orNull)
+      with AuditResult
 
   def fromHandlerResult(result: HandlerResult): AuditResult =
     result match {
@@ -45,7 +47,7 @@ object AuditResult {
 
 trait AuditConnector {
   def auditingConfig: AuditingConfig
-  def auditChannel  : AuditChannel
+  def auditChannel: AuditChannel
   def datastreamMetrics: DatastreamMetrics
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -54,51 +56,78 @@ trait AuditConnector {
 
   lazy val auditSerialiser: AuditSerialiserLike = AuditSerialiser
 
-  def sendExplicitAudit(auditType: String, detail: Map[String, String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
+  def sendExplicitAudit(auditType: String, detail: Map[String, String])(implicit
+      hc: HeaderCarrier,
+      ec: ExecutionContext
+  ): Unit =
     sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
 
-  def sendExplicitAudit[T](auditType: String, detail: T)(implicit hc: HeaderCarrier, ec: ExecutionContext, writes: Writes[T]): Unit =
+  def sendExplicitAudit[T](auditType: String, detail: T)(implicit
+      hc: HeaderCarrier,
+      ec: ExecutionContext,
+      writes: AuditFormat[T]
+  ): Unit =
     sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
 
-  def sendExplicitAudit(auditType: String, detail: JsObject)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
+  private def sendExplicitAudit(auditType: String, detail: JsObject)(implicit
+      hc: HeaderCarrier,
+      ec: ExecutionContext
+  ): Unit =
     sendExtendedEvent(
       ExtendedDataEvent(
         auditProvider = auditingConfig.auditProvider,
-        auditSource   = auditingConfig.auditSource,
-        auditType     = auditType,
-        eventId       = UUID.randomUUID().toString,
-        tags          = hc.toAuditTags(),
-        detail        = detail
+        auditSource = auditingConfig.auditSource,
+        auditType = auditType,
+        eventId = UUID.randomUUID().toString,
+        tags = hc.toAuditTags(),
+        detail = detail
       )
     )
 
-  def sendEvent(event: DataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec: ExecutionContext): Future[AuditResult] =
+  def sendEvent(event: DataEvent)(implicit
+      hc: HeaderCarrier = HeaderCarrier(),
+      ec: ExecutionContext
+  ): Future[AuditResult] =
     ifEnabled {
       send(
         "/write/audit",
-        auditSerialiser.serialise(event.copy(
-          auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider),
-          tags = hc.appendToDefaultTags(event.tags)))
+        auditSerialiser.serialise(
+          event.copy(
+            auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider),
+            tags = hc.appendToDefaultTags(event.tags)
+          )
         )
-    }
-
-  def sendExtendedEvent(event: ExtendedDataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec: ExecutionContext): Future[AuditResult] =
-    ifEnabled {
-      send(
-         "/write/audit",
-        auditSerialiser.serialise(event.copy(
-          auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider),
-          tags = hc.appendToDefaultTags(event.tags)))
       )
     }
 
-  def sendMergedEvent(event: MergedDataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec: ExecutionContext): Future[AuditResult] =
+  def sendExtendedEvent(event: ExtendedDataEvent)(implicit
+      hc: HeaderCarrier = HeaderCarrier(),
+      ec: ExecutionContext
+  ): Future[AuditResult] =
+    ifEnabled {
+      send(
+        "/write/audit",
+        auditSerialiser.serialise(
+          event.copy(
+            auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider),
+            tags = hc.appendToDefaultTags(event.tags)
+          )
+        )
+      )
+    }
+
+  def sendMergedEvent(event: MergedDataEvent)(implicit
+      hc: HeaderCarrier = HeaderCarrier(),
+      ec: ExecutionContext
+  ): Future[AuditResult] =
     ifEnabled {
       send(
         "/write/audit/merged",
-        auditSerialiser.serialise(event.copy(
-          auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider)
-        ))
+        auditSerialiser.serialise(
+          event.copy(
+            auditProvider = event.auditProvider.orElse(auditingConfig.auditProvider)
+          )
+        )
       )
     }
 
@@ -109,14 +138,20 @@ trait AuditConnector {
     enabled
   }
 
-  private def ifEnabled(send: => Future[HandlerResult])(implicit ec: ExecutionContext): Future[AuditResult] =
+  private def ifEnabled(
+      send: => Future[HandlerResult]
+  )(implicit ec: ExecutionContext): Future[AuditResult] =
     if (isEnabled)
       send.map(AuditResult.fromHandlerResult)
     else
       Future.successful(AuditResult.Disabled)
 
-  private[connector] def send(path:String, audit:JsObject)(implicit ec: ExecutionContext): Future[HandlerResult] = {
-    val metadata = Json.obj("metadata" -> Json.obj("metricsKey" -> datastreamMetrics.metricsKey))
+  private[connector] def send(path: String, audit: JsObject)(implicit
+      ec: ExecutionContext
+  ): Future[HandlerResult] = {
+    val metadata = Json.obj(
+      "metadata" -> Json.obj("metricsKey" -> datastreamMetrics.metricsKey)
+    )
     auditChannel.send(path, audit ++ metadata)
   }
 }

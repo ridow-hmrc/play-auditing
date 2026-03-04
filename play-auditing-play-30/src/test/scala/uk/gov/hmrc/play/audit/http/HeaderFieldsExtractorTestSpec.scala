@@ -19,19 +19,23 @@ package uk.gov.hmrc.play.audit.http
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class HeaderFieldsExtractorTestSpec
-  extends AnyWordSpec
-  with Matchers {
+class HeaderFieldsExtractorTestSpec extends AnyWordSpec with Matchers {
 
   "The optional audit fields code" should {
     "Return only surrogate header" in {
       val optionalFields =
-        HeaderFieldsExtractor.optionalAuditFieldsSeq(Map("Foo" -> "Bar", "Ehh" -> "Meh", "Surrogate" -> "Cool").view.mapValues(Seq(_)).toMap)
+        HeaderFieldsExtractor.optionalAuditFieldsSeq(
+          Map("Foo" -> "Bar", "Ehh" -> "Meh", "Surrogate" -> "Cool").view
+            .mapValues(Seq(_))
+            .toMap
+        )
       optionalFields shouldBe Map("surrogate" -> "Cool")
     }
 
     "Return no surrogate headers when none in headers" in {
-      val optionalFields = HeaderFieldsExtractor.optionalAuditFieldsSeq(Map("Foo" -> "Bar", "Ehh" -> "Meh").view.mapValues(Seq(_)).toMap)
+      val optionalFields = HeaderFieldsExtractor.optionalAuditFieldsSeq(
+        Map("Foo" -> "Bar", "Ehh" -> "Meh").view.mapValues(Seq(_)).toMap
+      )
       optionalFields shouldBe empty
     }
   }

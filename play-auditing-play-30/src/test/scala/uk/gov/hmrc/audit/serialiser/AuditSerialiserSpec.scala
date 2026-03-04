@@ -21,7 +21,14 @@ import play.api.libs.json.{JsString, Json}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.audit.BuildInfo
-import uk.gov.hmrc.play.audit.model.{DataCall, DataEvent, ExtendedDataEvent, MergedDataEvent, RedactionLog, TruncationLog}
+import uk.gov.hmrc.play.audit.model.{
+  DataCall,
+  DataEvent,
+  ExtendedDataEvent,
+  MergedDataEvent,
+  RedactionLog,
+  TruncationLog
+}
 
 class AuditSerialiserSpec extends AnyWordSpec with Matchers {
 
@@ -40,11 +47,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
 
     "serialise DataEvent with truncationLog & redactions" in {
       testDataEvent(
-        truncationLog =
-          TruncationLog.Entry(
-            truncatedFields = List("request.detail.requestdetailkey"),
-            timestamp       = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        truncationLog = TruncationLog.Entry(
+          truncatedFields = List("request.detail.requestdetailkey"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedTruncationJson = s""",
           "truncation": {
             "truncationLog": [{
@@ -54,11 +60,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "version"        : "${BuildInfo.version}"
             }]
           }""",
-        redactionLog =
-          RedactionLog.Entry(
-            redactedFields = List("request.detail.requestBody"),
-            timestamp      = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        redactionLog = RedactionLog.Entry(
+          redactedFields = List("request.detail.requestBody"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedRedactionJson = s"""
           "redaction": {
             "containsRedactions": true,
@@ -68,25 +73,27 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "code"          : "play-auditing",
               "version"       : "${BuildInfo.version}"
             }]
-          }""",
+          }"""
       )
     }
     def testDataEvent(
-      truncationLog: TruncationLog,
-      expectedTruncationJson: String,
-      redactionLog: RedactionLog,
-      expectedRedactionJson: String
+        truncationLog: TruncationLog,
+        expectedTruncationJson: String,
+        redactionLog: RedactionLog,
+        expectedRedactionJson: String
     ) =
-      AuditSerialiser.serialise(DataEvent(
-        auditSource   = "myapp",
-        auditType     = "RequestReceived",
-        eventId       = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
-        tags          = Map("tagkey" -> "tagval"),
-        detail        = Map("detailkey" -> "detailval"),
-        generatedAt   = Instant.parse("2007-12-03T10:15:30.000Z"),
-        truncationLog = truncationLog,
-        redactionLog  = redactionLog
-      )) shouldBe Json.parse(s"""{
+      AuditSerialiser.serialise(
+        DataEvent(
+          auditSource = "myapp",
+          auditType = "RequestReceived",
+          eventId = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
+          tags = Map("tagkey" -> "tagval"),
+          detail = Map("detailkey" -> "detailval"),
+          generatedAt = Instant.parse("2007-12-03T10:15:30.000Z"),
+          truncationLog = truncationLog,
+          redactionLog = redactionLog
+        )
+      ) shouldBe Json.parse(s"""{
         "auditSource" : "myapp",
         "auditType"   : "RequestReceived",
         "eventId"     : "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
@@ -113,11 +120,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
 
     "serialise ExtendedDataEvent with truncationLog & redactions" in {
       testExtendedDataEvent(
-        truncationLog =
-          TruncationLog.Entry(
-            truncatedFields = List("request.detail.requestdetailkey"),
-            timestamp       = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        truncationLog = TruncationLog.Entry(
+          truncatedFields = List("request.detail.requestdetailkey"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedTruncationJson = s""",
           "truncation": {
             "truncationLog": [{
@@ -127,11 +133,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "version"        : "${BuildInfo.version}"
             }]
           }""",
-        redactionLog =
-          RedactionLog.Entry(
-            redactedFields = List("request.detail.requestBody"),
-            timestamp      = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        redactionLog = RedactionLog.Entry(
+          redactedFields = List("request.detail.requestBody"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedRedactionJson = s"""
           "redaction": {
             "containsRedactions": true,
@@ -141,26 +146,28 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "code"          : "play-auditing",
               "version"       : "${BuildInfo.version}"
             }]
-          }""",
+          }"""
       )
     }
 
     def testExtendedDataEvent(
-      truncationLog: TruncationLog,
-      expectedTruncationJson: String,
-      redactionLog: RedactionLog,
-      expectedRedactionJson: String
+        truncationLog: TruncationLog,
+        expectedTruncationJson: String,
+        redactionLog: RedactionLog,
+        expectedRedactionJson: String
     ) =
-      AuditSerialiser.serialise(ExtendedDataEvent(
-        auditSource   = "myapp",
-        auditType     = "RequestReceived",
-        eventId       = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
-        tags          = Map("tagkey" -> "tagval"),
-        detail        = JsString("detail"),
-        generatedAt   = Instant.parse("2007-12-03T10:15:30.000Z"),
-        truncationLog = truncationLog,
-        redactionLog  = redactionLog
-      )) shouldBe Json.parse(s"""{
+      AuditSerialiser.serialise(
+        ExtendedDataEvent(
+          auditSource = "myapp",
+          auditType = "RequestReceived",
+          eventId = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
+          tags = Map("tagkey" -> "tagval"),
+          detail = JsString("detail"),
+          generatedAt = Instant.parse("2007-12-03T10:15:30.000Z"),
+          truncationLog = truncationLog,
+          redactionLog = redactionLog
+        )
+      ) shouldBe Json.parse(s"""{
         "auditSource" : "myapp",
         "auditType"   : "RequestReceived",
         "eventId"     : "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
@@ -187,11 +194,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
 
     "serialise MergedDataEvent with truncationLog" in {
       testMergedDataEvent(
-        truncationLog =
-          TruncationLog.Entry(
-            truncatedFields = List("request.detail.requestdetailkey"),
-            timestamp       = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        truncationLog = TruncationLog.Entry(
+          truncatedFields = List("request.detail.requestdetailkey"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedTruncationJson = s""",
           "truncation": {
             "truncationLog": [{
@@ -201,11 +207,10 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "version"        : "${BuildInfo.version}"
             }]
           }""",
-        redactionLog =
-          RedactionLog.Entry(
-            redactedFields = List("request.detail.requestBody"),
-            timestamp      = Instant.parse("2007-12-03T10:16:31.124Z")
-          ),
+        redactionLog = RedactionLog.Entry(
+          redactedFields = List("request.detail.requestBody"),
+          timestamp = Instant.parse("2007-12-03T10:16:31.124Z")
+        ),
         expectedRedactionJson = s"""
           "redaction": {
             "containsRedactions": true,
@@ -215,33 +220,35 @@ class AuditSerialiserSpec extends AnyWordSpec with Matchers {
               "code"          : "play-auditing",
               "version"       : "${BuildInfo.version}"
             }]
-          }""",
+          }"""
       )
     }
 
     def testMergedDataEvent(
-      truncationLog: TruncationLog,
-      expectedTruncationJson: String,
-      redactionLog: RedactionLog,
-      expectedRedactionJson: String
+        truncationLog: TruncationLog,
+        expectedTruncationJson: String,
+        redactionLog: RedactionLog,
+        expectedRedactionJson: String
     ) =
-      AuditSerialiser.serialise(MergedDataEvent(
-        auditSource   = "myapp",
-        auditType     = "RequestReceived",
-        eventId       = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
-        request       = DataCall(
-                          tags   = Map("requesttagkey" -> "requesttagval"),
-                          detail = Map("requestdetailkey" -> "requestdetailval"),
-                          generatedAt = Instant.parse("2007-12-03T10:15:30.123Z")
-                        ),
-        response      = DataCall(
-                          tags   = Map("responsetagkey" -> "responsetagval"),
-                          detail = Map("responsedetailkey" -> "responsedetailval"),
-                          generatedAt = Instant.parse("2007-12-03T10:16:31.123Z")
-                        ),
-        truncationLog = truncationLog,
-        redactionLog  = redactionLog
-      )) shouldBe Json.parse(s"""{
+      AuditSerialiser.serialise(
+        MergedDataEvent(
+          auditSource = "myapp",
+          auditType = "RequestReceived",
+          eventId = "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",
+          request = DataCall(
+            tags = Map("requesttagkey" -> "requesttagval"),
+            detail = Map("requestdetailkey" -> "requestdetailval"),
+            generatedAt = Instant.parse("2007-12-03T10:15:30.123Z")
+          ),
+          response = DataCall(
+            tags = Map("responsetagkey" -> "responsetagval"),
+            detail = Map("responsedetailkey" -> "responsedetailval"),
+            generatedAt = Instant.parse("2007-12-03T10:16:31.123Z")
+          ),
+          truncationLog = truncationLog,
+          redactionLog = redactionLog
+        )
+      ) shouldBe Json.parse(s"""{
         "auditSource" : "myapp",
         "auditType"   : "RequestReceived",
         "eventId"     : "cb5ebe82-cf3c-4f15-bd92-39a6baa1f929",

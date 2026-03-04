@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.audit
+package uk.gov.hmrc.play.audit.http.validation
 
-import org.scalatestplus.mockito.MockitoSugar.mock
-import uk.gov.hmrc.play.audit.http.connector.{DatastreamMetrics, Counter}
+import play.api.libs.json.{JsObject, JsResult, JsValue, OFormat}
 
-trait DatastreamMetricsMock {
+class AuditFormat[T](format: OFormat[T]) extends OFormat[T] {
+  override def writes(o: T): JsObject = format.writes(o)
 
-  def mockDatastreamMetrics(metricsKey: Option[String]): DatastreamMetrics =
-    DatastreamMetrics(
-      mock[Counter],
-      mock[Counter],
-      mock[Counter],
-      metricsKey
-    )
+  override def reads(json: JsValue): JsResult[T] = format.reads(json)
 }

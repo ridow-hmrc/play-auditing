@@ -28,20 +28,21 @@ package object audit {
   // these are for internal use only, but can't be package private since clients are in uk.gov.hmrc.audit and uk.gov.hmrc.play.audit...
   object WSClient {
     def apply(
-      connectTimeout: Duration,
-      requestTimeout: Duration,
-      userAgent     : String
+        connectTimeout: Duration,
+        requestTimeout: Duration,
+        userAgent: String
     )(implicit
-      materializer: Materializer
+        materializer: Materializer
     ): WSClient =
       StandaloneAhcWSClient(
-        config = AhcWSClientConfigFactory.forConfig()
+        config = AhcWSClientConfigFactory
+          .forConfig()
           .copy(
             wsClientConfig = WSClientConfig()
               .copy(
                 connectionTimeout = connectTimeout,
-                requestTimeout    = requestTimeout,
-                userAgent         = Some(userAgent),
+                requestTimeout = requestTimeout,
+                userAgent = Some(userAgent)
               )
           )
       )

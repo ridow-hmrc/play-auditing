@@ -18,12 +18,11 @@ package uk.gov.hmrc.play.audit.http.connector
 
 import scala.concurrent.ExecutionContext
 
-/**
-  * Ensures tasks are run on the thread creating the future
+/** Ensures tasks are run on the thread creating the future
   *
   * This makes tests more deterministic
   */
-object RunInlineExecutionContext extends ExecutionContext  {
-  override def execute(runnable: Runnable): Unit = runnable.run()
+object RunInlineExecutionContext extends ExecutionContext {
+  override def execute(runnable: Runnable): Unit     = runnable.run()
   override def reportFailure(cause: Throwable): Unit = throw cause
 }

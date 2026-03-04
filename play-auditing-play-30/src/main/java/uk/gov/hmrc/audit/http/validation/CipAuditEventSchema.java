@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.audit
+package uk.gov.hmrc.audit.http.validation;
 
-import org.scalatestplus.mockito.MockitoSugar.mock
-import uk.gov.hmrc.play.audit.http.connector.{DatastreamMetrics, Counter}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-trait DatastreamMetricsMock {
-
-  def mockDatastreamMetrics(metricsKey: Option[String]): DatastreamMetrics =
-    DatastreamMetrics(
-      mock[Counter],
-      mock[Counter],
-      mock[Counter],
-      metricsKey
-    )
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface CipAuditEventSchema {
+    public String schemaFile() default "";
 }

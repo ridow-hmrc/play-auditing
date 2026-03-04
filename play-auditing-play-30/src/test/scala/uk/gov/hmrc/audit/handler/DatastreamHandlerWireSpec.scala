@@ -34,35 +34,36 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 
 class DatastreamHandlerWireSpec
-  extends AnyWordSpec
-     with Inspectors
-     with Matchers
-     with BeforeAndAfterEach
-     with BeforeAndAfterAll
-     with ScalaFutures
-     with IntegrationPatience
-     with DatastreamMetricsMock {
+    extends AnyWordSpec
+    with Inspectors
+    with Matchers
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with ScalaFutures
+    with IntegrationPatience
+    with DatastreamMetricsMock {
 
   val datastreamTestPort: Int = WireMockUtils.availablePort()
-  val datastreamPath = "/write/audit"
+  val datastreamPath          = "/write/audit"
 
-  implicit val system   : ActorSystem          = ActorSystem()
-  implicit val lifecycle: ApplicationLifecycle = new DefaultApplicationLifecycle()
+  implicit val system: ActorSystem             = ActorSystem()
+  implicit val lifecycle: ApplicationLifecycle =
+    new DefaultApplicationLifecycle()
 
   trait Test {
     val wsClient = WSClient(
       connectTimeout = 2000.millis,
       requestTimeout = 2000.millis,
-      userAgent      = "the-micro-service-name"
+      userAgent = "the-micro-service-name"
     )
 
     val datastreamHandler = new DatastreamHandler(
-      scheme         = "http",
-      host           = "localhost",
-      port           = datastreamTestPort,
-      path           = datastreamPath,
-      wsClient       = wsClient,
-      metrics        = mockDatastreamMetrics(Some("play.some-application"))
+      scheme = "http",
+      host = "localhost",
+      port = datastreamTestPort,
+      path = datastreamPath,
+      wsClient = wsClient,
+      metrics = mockDatastreamMetrics(Some("play.some-application"))
     )
   }
 
@@ -88,7 +89,11 @@ class DatastreamHandlerWireSpec
       val event = JsString("EVENT")
       stub(event, 204)
       datastreamHandler.sendEvent(event).futureValue
-      WireMock.verify(1, postRequestedFor(urlPathEqualTo(datastreamPath)).withHeader("User-Agent", equalTo("the-micro-service-name")))
+      WireMock.verify(
+        1,
+        postRequestedFor(urlPathEqualTo(datastreamPath))
+          .withHeader("User-Agent", equalTo("the-micro-service-name"))
+      )
     }
   }
 
@@ -106,7 +111,8 @@ class DatastreamHandlerWireSpec
       WireMock.stubFor(
         post(urlPathEqualTo(datastreamPath))
           .withRequestBody(WireMock.equalTo(event.toString))
-          .willReturn(aResponse().withFixedDelay(3000).withStatus(204)))
+          .willReturn(aResponse().withFixedDelay(3000).withStatus(204))
+      )
 
       whenReady(datastreamHandler.sendEvent(event), timeout(4000.millis)) { result =>
         WireMock.verify(1, postRequestedFor(urlPathEqualTo(datastreamPath)))
@@ -116,19 +122,27 @@ class DatastreamHandlerWireSpec
 
     "return a failure if the WSClient is in IllegalStateException: Closed state " in new Test {
       wsClient.close()
-      datastreamHandler.sendEvent(JsString("CLOSED")).futureValue shouldBe HandlerResult.Failure
+      datastreamHandler
+        .sendEvent(JsString("CLOSED"))
+        .futureValue shouldBe HandlerResult.Failure
     }
   }
 
   "Calls to Datastream that return an empty response" should {
     "not retry the POST (beyond default lib retries) and return a failure" in {
-      verifyOnlyDefaultLibraryRetries(JsString("EMPTY_RESPONSE"), Fault.EMPTY_RESPONSE)
+      verifyOnlyDefaultLibraryRetries(
+        JsString("EMPTY_RESPONSE"),
+        Fault.EMPTY_RESPONSE
+      )
     }
   }
 
   "Calls to Datastream that return a bad response" should {
     "not retry the POST (beyond default lib retries) and return a failure" in {
-      verifyOnlyDefaultLibraryRetries(JsString("RANDOM_DATA_THEN_CLOSE"), Fault.RANDOM_DATA_THEN_CLOSE)
+      verifyOnlyDefaultLibraryRetries(
+        JsString("RANDOM_DATA_THEN_CLOSE"),
+        Fault.RANDOM_DATA_THEN_CLOSE
+      )
     }
   }
 
@@ -146,7 +160,10 @@ class DatastreamHandlerWireSpec
         .willReturn(aResponse().withFault(fault))
     )
 
-  private def verifyOnlyDefaultLibraryRetries(event: JsValue, fault: Fault): Unit = new Test {
+  private def verifyOnlyDefaultLibraryRetries(
+      event: JsValue,
+      fault: Fault
+  ): Unit = new Test {
     stub(event, fault)
     val result = datastreamHandler.sendEvent(event).futureValue
 
@@ -156,7 +173,11 @@ class DatastreamHandlerWireSpec
     WireMock.verify(6, postRequestedFor(urlPathEqualTo(datastreamPath)))
   }
 
-  private def verifySingleCall(event: JsValue, responseStatus: Integer, expectedResult: HandlerResult): Unit = new Test {
+  private def verifySingleCall(
+      event: JsValue,
+      responseStatus: Integer,
+      expectedResult: HandlerResult
+  ): Unit = new Test {
     stub(event, responseStatus)
 
     val result = datastreamHandler.sendEvent(event).futureValue

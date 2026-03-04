@@ -26,20 +26,23 @@ import uk.gov.hmrc.play.audit.http.connector.DatastreamMetrics
 import scala.concurrent.{ExecutionContext, Future}
 
 class DatastreamHandler(
-  scheme  : String,
-  host    : String,
-  port    : Integer,
-  path    : String,
-  wsClient: WSClient,
-  metrics: DatastreamMetrics,
+    scheme: String,
+    host: String,
+    port: Integer,
+    path: String,
+    wsClient: WSClient,
+    metrics: DatastreamMetrics
 ) extends HttpHandler(
-  endpointUrl = new URL(s"$scheme://$host:$port$path"),
-  wsClient    = wsClient
-) with AuditHandler {
+      endpointUrl = new URL(s"$scheme://$host:$port$path"),
+      wsClient = wsClient
+    )
+    with AuditHandler {
 
-  private[handler] val logger : Logger = LoggerFactory.getLogger(getClass)
+  private[handler] val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  override def sendEvent(event: JsValue)(implicit ec: ExecutionContext): Future[HandlerResult] =
+  override def sendEvent(
+      event: JsValue
+  )(implicit ec: ExecutionContext): Future[HandlerResult] =
     sendHttpRequest(event).flatMap {
       case HttpResult.Response(status) =>
         Future.successful(status match {
@@ -48,23 +51,28 @@ class DatastreamHandler(
             Success
           case 400 | 413 =>
             metrics.rejectCounter.inc()
-            logger.warn(s"AUDIT_REJECTED: received response with $status status code")
+            logger.warn(
+              s"AUDIT_REJECTED: received response with $status status code"
+            )
             Rejected
-          case _   =>
+          case _ =>
             metrics.failureCounter.inc()
-            logger.warn(s"AUDIT_FAILURE: received response with $status status code")
+            logger.warn(
+              s"AUDIT_FAILURE: received response with $status status code"
+            )
             Failure
         })
       case HttpResult.Malformed =>
         metrics.failureCounter.inc()
         logger.warn("AUDIT_FAILURE: received malformed response")
-          Future.successful(Failure)
+        Future.successful(Failure)
       case HttpResult.Failure(msg, exceptionOption) =>
         metrics.failureCounter.inc()
 
         exceptionOption match {
           case None     => logger.warn(s"AUDIT_FAILURE: failed with error '$msg'")
-          case Some(ex) => logger.warn(s"AUDIT_FAILURE: failed with error '$msg'", ex)
+          case Some(ex) =>
+            logger.warn(s"AUDIT_FAILURE: failed with error '$msg'", ex)
         }
         Future.successful(Failure)
     }

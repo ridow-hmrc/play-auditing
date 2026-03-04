@@ -38,16 +38,17 @@ class AuditSerialiser extends AuditSerialiserLike {
     )
 
   private implicit val truncationLogWriterEntry: Writes[TruncationLog.Entry] =
-    Writes[TruncationLog.Entry] {
-      case TruncationLog.Entry(truncatedFields, timestamp) =>
-        Json.obj(
-          "truncationLog" -> Json.arr(Json.obj(
-              "truncatedFields" -> truncatedFields,
-              "timestamp"       -> timestamp,
-              "code"            -> "play-auditing",
-              "version"         -> BuildInfo.version
-            ))
+    Writes[TruncationLog.Entry] { case TruncationLog.Entry(truncatedFields, timestamp) =>
+      Json.obj(
+        "truncationLog" -> Json.arr(
+          Json.obj(
+            "truncatedFields" -> truncatedFields,
+            "timestamp"       -> timestamp,
+            "code"            -> "play-auditing",
+            "version"         -> BuildInfo.version
+          )
         )
+      )
     }
 
   private implicit val redactionLogWriter: Writes[RedactionLog] =
@@ -57,56 +58,94 @@ class AuditSerialiser extends AuditSerialiserLike {
       case RedactionLog.Entry(redactedFields, timestamp) =>
         Json.obj(
           "containsRedactions" -> true,
-          "redactionLog"       -> Json.arr(Json.obj(
-            "redactedFields" -> redactedFields,
-            "timestamp"      -> timestamp,
-            "code"           -> "play-auditing",
-            "version"        -> BuildInfo.version
-          ))
-      )
+          "redactionLog"       -> Json.arr(
+            Json.obj(
+              "redactedFields" -> redactedFields,
+              "timestamp"      -> timestamp,
+              "code"           -> "play-auditing",
+              "version"        -> BuildInfo.version
+            )
+          )
+        )
     }
 
   private implicit val dataEventWriter: Writes[DataEvent] =
-    ( (__ \ "auditProvider"              ).writeNullable[String]
-    ~ (__ \ "auditSource"                ).write[String]
-    ~ (__ \ "auditType"                  ).write[String]
-    ~ (__ \ "eventId"                    ).write[String]
-    ~ (__ \ "tags"                       ).write[Map[String, String]]
-    ~ (__ \ "detail"                     ).write[Map[String, String]]
-    ~ (__ \ "generatedAt"                ).write[Instant]
-    ~ (__ \ "dataPipeline" \ "truncation").writeNullable[TruncationLog.Entry].contramap[TruncationLog](_.asEntry)
-    ~ (__ \ "dataPipeline" \ "redaction" ).write[RedactionLog]
-    )(de => (de.auditProvider, de.auditSource, de.auditType, de.eventId, de.tags, de.detail, de.generatedAt, de.truncationLog, de.redactionLog))
+    ((__ \ "auditProvider").writeNullable[String]
+      ~ (__ \ "auditSource").write[String]
+      ~ (__ \ "auditType").write[String]
+      ~ (__ \ "eventId").write[String]
+      ~ (__ \ "tags").write[Map[String, String]]
+      ~ (__ \ "detail").write[Map[String, String]]
+      ~ (__ \ "generatedAt").write[Instant]
+      ~ (__ \ "dataPipeline" \ "truncation")
+        .writeNullable[TruncationLog.Entry]
+        .contramap[TruncationLog](_.asEntry)
+      ~ (__ \ "dataPipeline" \ "redaction").write[RedactionLog])(de =>
+      (
+        de.auditProvider,
+        de.auditSource,
+        de.auditType,
+        de.eventId,
+        de.tags,
+        de.detail,
+        de.generatedAt,
+        de.truncationLog,
+        de.redactionLog
+      )
+    )
 
   private implicit val extendedDataEventWriter: Writes[ExtendedDataEvent] =
-    ( (__ \ "auditProvider"              ).writeNullable[String]
-    ~ (__ \ "auditSource"                ).write[String]
-    ~ (__ \ "auditType"                  ).write[String]
-    ~ (__ \ "eventId"                    ).write[String]
-    ~ (__ \ "tags"                       ).write[Map[String, String]]
-    ~ (__ \ "detail"                     ).write[JsValue]
-    ~ (__ \ "generatedAt"                ).write[Instant]
-    ~ (__ \ "dataPipeline" \ "truncation").writeNullable[TruncationLog.Entry].contramap[TruncationLog](_.asEntry)
-    ~ (__ \ "dataPipeline" \ "redaction" ).write[RedactionLog]
-    )(de => (de.auditProvider, de.auditSource, de.auditType, de.eventId, de.tags, de.detail, de.generatedAt, de.truncationLog, de.redactionLog))
+    ((__ \ "auditProvider").writeNullable[String]
+      ~ (__ \ "auditSource").write[String]
+      ~ (__ \ "auditType").write[String]
+      ~ (__ \ "eventId").write[String]
+      ~ (__ \ "tags").write[Map[String, String]]
+      ~ (__ \ "detail").write[JsValue]
+      ~ (__ \ "generatedAt").write[Instant]
+      ~ (__ \ "dataPipeline" \ "truncation")
+        .writeNullable[TruncationLog.Entry]
+        .contramap[TruncationLog](_.asEntry)
+      ~ (__ \ "dataPipeline" \ "redaction").write[RedactionLog])(de =>
+      (
+        de.auditProvider,
+        de.auditSource,
+        de.auditType,
+        de.eventId,
+        de.tags,
+        de.detail,
+        de.generatedAt,
+        de.truncationLog,
+        de.redactionLog
+      )
+    )
 
   private implicit val dataCallWriter: Writes[DataCall] =
-    ( (__ \ "tags"       ).write[Map[String, String]]
-    ~ (__ \ "detail"     ).write[Map[String, String]]
-    ~ (__ \ "generatedAt").write[Instant]
-    )(dc => (dc.tags, dc.detail, dc.generatedAt))
+    ((__ \ "tags").write[Map[String, String]]
+      ~ (__ \ "detail").write[Map[String, String]]
+      ~ (__ \ "generatedAt").write[Instant])(dc => (dc.tags, dc.detail, dc.generatedAt))
 
-  private implicit val mergedDataEventWriter  : Writes[MergedDataEvent]   =
-    ( (__ \ "auditProvider"              ).writeNullable[String]
-    ~ (__ \ "auditSource"                ).write[String]
-    ~ (__ \ "auditType"                  ).write[String]
-    ~ (__ \ "eventId"                    ).write[String]
-    ~ (__ \ "request"                    ).write[DataCall]
-    ~ (__ \ "response"                   ).write[DataCall]
-    ~ (__ \ "dataPipeline" \ "truncation").writeNullable[TruncationLog.Entry].contramap[TruncationLog](_.asEntry)
-    ~ (__ \ "dataPipeline" \ "redaction" ).write[RedactionLog]
-    )(de => (de.auditProvider, de.auditSource, de.auditType, de.eventId, de.request, de.response, de.truncationLog, de.redactionLog))
-
+  private implicit val mergedDataEventWriter: Writes[MergedDataEvent] =
+    ((__ \ "auditProvider").writeNullable[String]
+      ~ (__ \ "auditSource").write[String]
+      ~ (__ \ "auditType").write[String]
+      ~ (__ \ "eventId").write[String]
+      ~ (__ \ "request").write[DataCall]
+      ~ (__ \ "response").write[DataCall]
+      ~ (__ \ "dataPipeline" \ "truncation")
+        .writeNullable[TruncationLog.Entry]
+        .contramap[TruncationLog](_.asEntry)
+      ~ (__ \ "dataPipeline" \ "redaction").write[RedactionLog])(de =>
+      (
+        de.auditProvider,
+        de.auditSource,
+        de.auditType,
+        de.eventId,
+        de.request,
+        de.response,
+        de.truncationLog,
+        de.redactionLog
+      )
+    )
 
   override def serialise(event: DataEvent): JsObject =
     Json.toJson(event).as[JsObject]

@@ -29,7 +29,9 @@ class LoggingHandler(logger: Logger) extends AuditHandler {
   def makeFailureMessage(event: JsValue): String =
     s"$ErrorKey : audit item : ${event.toString}"
 
-  override def sendEvent(event: JsValue)(implicit ec: ExecutionContext): Future[HandlerResult] = {
+  override def sendEvent(
+      event: JsValue
+  )(implicit ec: ExecutionContext): Future[HandlerResult] = {
     val message = makeFailureMessage(event)
     logger.warn(message)
     Future.successful(HandlerResult.Success)

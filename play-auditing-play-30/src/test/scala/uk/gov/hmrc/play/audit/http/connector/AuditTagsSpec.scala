@@ -27,21 +27,21 @@ class AuditTagsSpec extends AnyWordSpec with Matchers {
   import uk.gov.hmrc.http.HeaderNames._
   import AuditExtensions._
 
-  val authorization = Authorization("authorization")
-  val forwarded = ForwardedFor("ipAdress")
-  val sessionId = SessionId("1234567890")
-  val requestId = RequestId("0987654321")
-  val deviceId = "testDeviceId"
+  val authorization    = Authorization("authorization")
+  val forwarded        = ForwardedFor("ipAdress")
+  val sessionId        = SessionId("1234567890")
+  val requestId        = RequestId("0987654321")
+  val deviceId         = "testDeviceId"
   val akamaiReputation = AkamaiReputation("foo")
 
   "Audit TAGS" should {
     "be present" in {
       val hc = new HeaderCarrier(
-        authorization    = Some(authorization),
-        forwarded        = Some(forwarded),
-        sessionId        = Some(sessionId),
-        requestId        = Some(requestId),
-        deviceID         = Some(deviceId),
+        authorization = Some(authorization),
+        forwarded = Some(forwarded),
+        sessionId = Some(sessionId),
+        requestId = Some(requestId),
+        deviceID = Some(deviceId),
         akamaiReputation = Some(akamaiReputation)
       )
 
@@ -77,7 +77,10 @@ class AuditTagsSpec extends AnyWordSpec with Matchers {
     }
 
     "have more tags.clientIP and tags.clientPort" in {
-      val hc = HeaderCarrier(trueClientIp = Some("192.168.1.1"), trueClientPort =Some("9999"))
+      val hc = HeaderCarrier(
+        trueClientIp = Some("192.168.1.1"),
+        trueClientPort = Some("9999")
+      )
 
       val tags = hc.toAuditTags("defaultsWhenNothingSet", "/the/request/path")
 
@@ -89,11 +92,11 @@ class AuditTagsSpec extends AnyWordSpec with Matchers {
   "Audit DETAILS" should {
     "be present" in {
       val hc = new HeaderCarrier(
-        authorization    = Some(authorization),
-        forwarded        = Some(forwarded),
-        sessionId        = Some(sessionId),
-        requestId        = Some(requestId),
-        deviceID         = Some(deviceId)
+        authorization = Some(authorization),
+        forwarded = Some(forwarded),
+        sessionId = Some(sessionId),
+        requestId = Some(requestId),
+        deviceID = Some(deviceId)
       )
 
       val details = hc.toAuditDetails()
@@ -110,9 +113,15 @@ class AuditTagsSpec extends AnyWordSpec with Matchers {
     }
 
     "have more details only" in {
-      val hc = HeaderCarrier(trueClientIp = Some("192.168.1.1"), trueClientPort =Some("9999"))
+      val hc = HeaderCarrier(
+        trueClientIp = Some("192.168.1.1"),
+        trueClientPort = Some("9999")
+      )
 
-      val details = hc.toAuditDetails("more-details" -> "the details", "lots-of-details" -> "interesting info")
+      val details = hc.toAuditDetails(
+        "more-details"    -> "the details",
+        "lots-of-details" -> "interesting info"
+      )
 
       details.size shouldBe 2
 

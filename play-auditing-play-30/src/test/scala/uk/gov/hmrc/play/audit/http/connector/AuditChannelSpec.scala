@@ -34,34 +34,38 @@ import uk.gov.hmrc.play.audit.http.config.{AuditingConfig, BaseUri, Consumer}
 import scala.concurrent.ExecutionContext
 
 class AuditChannelSpec
-  extends AnyWordSpec
-     with Matchers
-     with ScalaFutures
-     with IntegrationPatience
-     with MockitoSugar
-     with OneInstancePerTest {
+    extends AnyWordSpec
+    with Matchers
+    with ScalaFutures
+    with IntegrationPatience
+    with MockitoSugar
+    with OneInstancePerTest {
 
   implicit val ec: ExecutionContext = RunInlineExecutionContext
   implicit val as: ActorSystem      = ActorSystem()
 
-  private def createAuditChannel(config: AuditingConfig): AuditChannel = new AuditChannel with DatastreamMetricsMock {
-    override def auditingConfig   : AuditingConfig       = config
-    override def materializer     : Materializer         = implicitly
-    override def lifecycle        : ApplicationLifecycle = new DefaultApplicationLifecycle()
-    override def datastreamMetrics: DatastreamMetrics    = mockDatastreamMetrics(Some("play.the-project-name"))
-  }
+  private def createAuditChannel(config: AuditingConfig): AuditChannel =
+    new AuditChannel with DatastreamMetricsMock {
+      override def auditingConfig: AuditingConfig  = config
+      override def materializer: Materializer      = implicitly
+      override def lifecycle: ApplicationLifecycle =
+        new DefaultApplicationLifecycle()
+      override def datastreamMetrics: DatastreamMetrics = mockDatastreamMetrics(
+        Some("play.the-project-name")
+      )
+    }
 
   "AuditConnector" should {
     "post data to datastream" in {
       val testPort = WireMockUtils.availablePort()
       val consumer = Consumer(BaseUri("localhost", testPort, "http"))
-      val config = AuditingConfig(
-        consumer         = Some(consumer),
-        enabled          = true,
-        auditSource      = "the-project-name",
+      val config   = AuditingConfig(
+        consumer = Some(consumer),
+        enabled = true,
+        auditSource = "the-project-name",
         auditSentHeaders = false
       )
-      val channel = createAuditChannel(config)
+      val channel  = createAuditChannel(config)
       val wireMock = new WireMockServer(testPort)
       WireMock.configureFor("localhost", testPort)
       wireMock.start()
@@ -69,7 +73,8 @@ class AuditChannelSpec
       WireMock.stubFor(
         post(urlPathEqualTo("/write/audit"))
           .withRequestBody(containing("TEST_DATA"))
-          .willReturn(aResponse().withStatus(204)))
+          .willReturn(aResponse().withStatus(204))
+      )
 
       channel.send("/write/audit", Json.obj("test" -> "TEST_DATA")).futureValue
       WireMock.verify(1, postRequestedFor(urlPathEqualTo("/write/audit")))

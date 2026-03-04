@@ -19,10 +19,9 @@ package uk.gov.hmrc.audit
 import java.io.IOException
 import java.net.ServerSocket
 
-
 object WireMockUtils {
   def availablePort(): Int = {
-    var port = 9876
+    var port                 = 9876
     var socket: ServerSocket = null
 
     try {

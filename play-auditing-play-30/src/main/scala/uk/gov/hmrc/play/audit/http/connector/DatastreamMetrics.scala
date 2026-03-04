@@ -21,10 +21,10 @@ trait Counter {
 }
 
 case class DatastreamMetrics(
-  successCounter: Counter,
-  rejectCounter : Counter,
-  failureCounter: Counter,
-  metricsKey    : Option[String] // not present if metrics are disabled
+    successCounter: Counter,
+    rejectCounter: Counter,
+    failureCounter: Counter,
+    metricsKey: Option[String] // not present if metrics are disabled
 )
 
 object DatastreamMetrics {
@@ -35,16 +35,16 @@ object DatastreamMetrics {
   lazy val disabled: DatastreamMetrics =
     DatastreamMetrics(
       successCounter = DisabledCounter,
-      rejectCounter  = DisabledCounter,
+      rejectCounter = DisabledCounter,
       failureCounter = DisabledCounter,
-      metricsKey     = None
+      metricsKey = None
     )
 
   def apply(prefix: String, mkCounter: String => Counter): DatastreamMetrics =
     DatastreamMetrics(
       successCounter = mkCounter("audit.success"),
-      rejectCounter  = mkCounter("audit.reject"),
+      rejectCounter = mkCounter("audit.reject"),
       failureCounter = mkCounter("audit.failure"),
-      metricsKey     = Some(prefix)
+      metricsKey = Some(prefix)
     )
 }

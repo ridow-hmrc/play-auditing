@@ -62,17 +62,18 @@ trait HttpAuditing {
 
   object AuditingHook extends HttpHook {
     override def apply(
-      verb     : String,
-      url      : URL,
-      request  : RequestData,
-      responseF: Future[ResponseData]
+        verb: String,
+        url: URL,
+        request: RequestData,
+        responseF: Future[ResponseData]
     )(implicit
-      hc: HeaderCarrier,
-      ec: ExecutionContext
+        hc: HeaderCarrier,
+        ec: ExecutionContext
     ): Unit =
       // short-circuit the payload creation
       if (auditConnector.isEnabled) {
-        val httpRequest = HttpRequest(verb, url.toString, request.headers, request.body, now())
+        val httpRequest =
+          HttpRequest(verb, url.toString, request.headers, request.body, now())
         responseF
           .map(Right.apply)
           .recover { case e: Throwable => Left(e.getMessage) }
@@ -80,22 +81,28 @@ trait HttpAuditing {
       }
   }
 
-  private[http] def audit(request: HttpRequest, responseToAudit: Either[String, ResponseData])(implicit hc: HeaderCarrier, ex: ExecutionContext): Unit =
+  private[http] def audit(
+      request: HttpRequest,
+      responseToAudit: Either[String, ResponseData]
+  )(implicit hc: HeaderCarrier, ex: ExecutionContext): Unit =
     if (isAuditable(request.url))
-      auditConnector.sendMergedEvent(
-        buildDataEvent(
-          request  = request,
-          response = responseToAudit
+      auditConnector
+        .sendMergedEvent(
+          buildDataEvent(
+            request = request,
+            response = responseToAudit
+          )
         )
-      ).onComplete {
-        case Success(AuditResult.Success | AuditResult.Disabled)  =>
-        case Success(AuditResult.Failure(msg, _))                 => // already logged
-        case Failure(ex)                                          => logger.error(s"Failed to audit http event: ${ex.getMessage}", ex)
-      }
+        .onComplete {
+          case Success(AuditResult.Success | AuditResult.Disabled) =>
+          case Success(AuditResult.Failure(msg, _))                => // already logged
+          case Failure(ex)                                         =>
+            logger.error(s"Failed to audit http event: ${ex.getMessage}", ex)
+        }
 
   private def buildDataEvent(
-    request            : HttpRequest,
-    response           : Either[String, ResponseData]
+      request: HttpRequest,
+      response: Either[String, ResponseData]
   )(implicit hc: HeaderCarrier) = {
     import AuditExtensions._
     val requestDetailsData =
@@ -107,52 +114,66 @@ trait HttpAuditing {
           Data.pure(Map(EventKeys.FailedRequestMessage -> errorMessage))
         case Right(response) =>
           for {
-            responseBody <- response.body
+            responseBody       <- response.body
             maskedResponseBody <- maskString(responseBody)
-          } yield
-            Map(
-              EventKeys.StatusCode      -> response.status.toString,
-              EventKeys.ResponseMessage -> maskedResponseBody
-            )
+          } yield Map(
+            EventKeys.StatusCode      -> response.status.toString,
+            EventKeys.ResponseMessage -> maskedResponseBody
+          )
       }
 
     val truncatedFields =
-      (if (requestDetailsData.isTruncated) List(s"request.detail.${EventKeys.RequestBody}") else List.empty) ++
-        (if (responseDetailsData.isTruncated) List(s"response.detail.${EventKeys.ResponseMessage}") else List.empty)
+      (if (requestDetailsData.isTruncated)
+         List(s"request.detail.${EventKeys.RequestBody}")
+       else List.empty) ++
+        (if (responseDetailsData.isTruncated)
+           List(s"response.detail.${EventKeys.ResponseMessage}")
+         else List.empty)
     if (truncatedFields.nonEmpty)
-      logger.info(s"Outbound ${request.verb} ${request.url} - the following fields were truncated for auditing: ${truncatedFields.mkString(", ")}")
-
+      logger.info(
+        s"Outbound ${request.verb} ${request.url} - the following fields were truncated for auditing: ${truncatedFields.mkString(", ")}"
+      )
 
     val redactedFields =
-      (if (requestDetailsData.isRedacted) List(s"request.detail.${EventKeys.RequestBody}") else List.empty) ++
-        (if (responseDetailsData.isRedacted) List(s"response.detail.${EventKeys.ResponseMessage}") else List.empty)
+      (if (requestDetailsData.isRedacted)
+         List(s"request.detail.${EventKeys.RequestBody}")
+       else List.empty) ++
+        (if (responseDetailsData.isRedacted)
+           List(s"response.detail.${EventKeys.ResponseMessage}")
+         else List.empty)
 
     MergedDataEvent(
-      auditSource   = appName,
-      auditType     = outboundCallAuditType,
-      request       = DataCall(
-                        tags        = hc.toAuditTags(request.url),
-                        detail      = requestDetailsData.value,
-                        generatedAt = request.generatedAt
-                      ),
-      response      = DataCall(
-                        tags        = Map.empty,
-                        detail      = responseDetailsData.value,
-                        generatedAt = now()
-                      ),
+      auditSource = appName,
+      auditType = outboundCallAuditType,
+      request = DataCall(
+        tags = hc.toAuditTags(request.url),
+        detail = requestDetailsData.value,
+        generatedAt = request.generatedAt
+      ),
+      response = DataCall(
+        tags = Map.empty,
+        detail = responseDetailsData.value,
+        generatedAt = now()
+      ),
       truncationLog = TruncationLog.of(truncatedFields),
-      redactionLog  = RedactionLog.of(redactedFields)
+      redactionLog = RedactionLog.of(redactedFields)
     )
   }
 
   private def when[K, V](pred: Boolean)(value: => Map[K, V]): Map[K, V] =
     if (pred) value else Map.empty
 
-  private[http] def caseInsensitiveMap(headers: Seq[(String, String)]): SortedMap[String, String] =
+  private[http] def caseInsensitiveMap(
+      headers: Seq[(String, String)]
+  ): SortedMap[String, String] =
     SortedMap()(Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER)) ++
-      headers.groupBy(_._1.toLowerCase).map{ case (_, hdrs) => hdrs.head._1 -> hdrs.map(_._2).mkString(",")}
+      headers.groupBy(_._1.toLowerCase).map { case (_, hdrs) =>
+        hdrs.head._1 -> hdrs.map(_._2).mkString(",")
+      }
 
-  private def requestDetails(httpRequest: HttpRequest)(implicit hc: HeaderCarrier): Data[Map[String, String]] = {
+  private def requestDetails(
+      httpRequest: HttpRequest
+  )(implicit hc: HeaderCarrier): Data[Map[String, String]] = {
     val maskedRequestBody =
       httpRequest.body.fold(Data.pure(Map.empty[String, String]))(b =>
         b.flatMap(maskRequestBody).map(mrb => Map(EventKeys.RequestBody -> mrb))
@@ -161,11 +182,14 @@ trait HttpAuditing {
     maskedRequestBody.map { mrb =>
       val caseInsensitiveHeaders = caseInsensitiveMap(httpRequest.headers)
       Map(
-        "ipAddress"               -> hc.forwarded.map(_.value).getOrElse("-"),
-        EventKeys.Path            -> httpRequest.url,
-        EventKeys.Method          -> httpRequest.verb
+        "ipAddress"      -> hc.forwarded.map(_.value).getOrElse("-"),
+        EventKeys.Path   -> httpRequest.url,
+        EventKeys.Method -> httpRequest.verb
       ) ++
-        caseInsensitiveHeaders.get(HeaderNames.surrogate).map(HeaderNames.surrogate.toLowerCase -> _).toMap ++ mrb ++
+        caseInsensitiveHeaders
+          .get(HeaderNames.surrogate)
+          .map(HeaderNames.surrogate.toLowerCase -> _)
+          .toMap ++ mrb ++
         when(auditConnector.auditSentHeaders)(
           caseInsensitiveHeaders - HeaderNames.surrogate - HeaderNames.authorisation
         )
@@ -175,10 +199,13 @@ trait HttpAuditing {
   private def maskRequestBody(body: HookData): Data[String] =
     body match {
       case HookData.FromMap(m) =>
-        Data.traverse(m.toSeq) {
-          case (key, _) if shouldMaskField(key) => Data.redacted(key -> MaskValue)
-          case other                            => Data.pure(other)
-        }.map(_.toMap.toString())
+        Data
+          .traverse(m.toSeq) {
+            case (key, _) if shouldMaskField(key) =>
+              Data.redacted(key -> MaskValue)
+            case other => Data.pure(other)
+          }
+          .map(_.toMap.toString())
       case HookData.FromString(s) =>
         maskString(s)
     }
@@ -201,8 +228,9 @@ trait HttpAuditing {
           }
       } catch {
         case _: SAXParseException => Data.pure(text)
-        case e: Throwable         => logger.error(s"Unexpected error parsing xml: ${e.getMessage}", e)
-                                     Data.pure(text)
+        case e: Throwable         =>
+          logger.error(s"Unexpected error parsing xml: ${e.getMessage}", e)
+          Data.pure(text)
       }
     else
       Data.pure(text)
@@ -210,13 +238,15 @@ trait HttpAuditing {
   private def maskJsonFields(json: JsValue): Data[JsValue] =
     json match {
       case JsObject(fields) =>
-          Data.traverse(fields.toSeq) { case (key, value) =>
+        Data
+          .traverse(fields.toSeq) { case (key, value) =>
             if (shouldMaskField(key))
               Data.redacted(key -> JsString(MaskValue))
             else
               maskJsonFields(value).map(key -> _)
-          }.map(JsObject(_))
-      case JsArray(values)   =>
+          }
+          .map(JsObject(_))
+      case JsArray(values) =>
         Data.traverse(values.toSeq)(maskJsonFields).map(JsArray(_))
       case other =>
         Data.pure(other)
@@ -226,10 +256,11 @@ trait HttpAuditing {
     node match {
       case e: Elem =>
         for {
-          child      <- if (shouldMaskField(e.label))
-                          Data.redacted(Seq(Text(MaskValue)))
-                        else
-                          Data.traverse(e.child.toSeq)(maskXMLFields)
+          child <-
+            if (shouldMaskField(e.label))
+              Data.redacted(Seq(Text(MaskValue)))
+            else
+              Data.traverse(e.child.toSeq)(maskXMLFields)
           attributes <- maskXMLAttributes(e.attributes)
         } yield e.copy(child = child, attributes = attributes)
       case other =>
@@ -239,37 +270,59 @@ trait HttpAuditing {
   private def maskXMLAttributes(attributes: MetaData): Data[MetaData] =
     attributes.foldLeft(Data.pure(Null: scala.xml.MetaData)) { (previous, attr) =>
       attr match {
-        case a: PrefixedAttribute   if shouldMaskField(a.key) => Data.redacted(new PrefixedAttribute(a.pre, a.key, MaskValue, previous.value))
-        case a: UnprefixedAttribute if shouldMaskField(a.key) => Data.redacted(new UnprefixedAttribute(a.key, MaskValue, previous.value))
-        case other                                            => previous.flatMap(_ => Data.pure(other))
+        case a: PrefixedAttribute if shouldMaskField(a.key) =>
+          Data.redacted(
+            new PrefixedAttribute(a.pre, a.key, MaskValue, previous.value)
+          )
+        case a: UnprefixedAttribute if shouldMaskField(a.key) =>
+          Data.redacted(
+            new UnprefixedAttribute(a.key, MaskValue, previous.value)
+          )
+        case other => previous.flatMap(_ => Data.pure(other))
       }
     }
 
   private def prettyPrinter() = // not val since is not thread-safe
     new PrettyPrinter(80, 4)
 
-  private def xxeResistantParser() = {  // not val since is not thread-safe
+  private def xxeResistantParser() = { // not val since is not thread-safe
     val saxParserFactory = SAXParserFactory.newInstance()
-    saxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-    saxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-    saxParserFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    saxParserFactory.setFeature(
+      "http://xml.org/sax/features/external-general-entities",
+      false
+    )
+    saxParserFactory.setFeature(
+      "http://apache.org/xml/features/disallow-doctype-decl",
+      true
+    )
+    saxParserFactory.setFeature(
+      "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+      false
+    )
     XML.withSAXParser(saxParserFactory.newSAXParser())
   }
 
   private def isAuditable(url: String) =
-    !url.contains("/write/audit") && auditDisabledForPattern.findFirstIn(url).isEmpty
+    !url.contains("/write/audit") && auditDisabledForPattern
+      .findFirstIn(url)
+      .isEmpty
 
   protected case class HttpRequest(
-    verb       : String,
-    url        : String,
-    headers    : Seq[(String, String)],
-    body       : Option[Data[HookData]],
-    generatedAt: Instant
+      verb: String,
+      url: String,
+      headers: Seq[(String, String)],
+      body: Option[Data[HookData]],
+      generatedAt: Instant
   )
 }
 
 // Used by bootstrap-play
 object HeaderFieldsExtractor {
-  def optionalAuditFieldsSeq(headers: Map[String, Seq[String]]): Map[String, String] =
-    headers.get(HeaderNames.surrogate).map(HeaderNames.surrogate.toLowerCase -> _.mkString(",")).toMap
+  def optionalAuditFieldsSeq(
+      headers: Map[String, Seq[String]]
+  ): Map[String, String] =
+    headers
+      .get(HeaderNames.surrogate)
+      .map(HeaderNames.surrogate.toLowerCase -> _.mkString(","))
+      .toMap
 }
