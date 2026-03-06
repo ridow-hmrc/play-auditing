@@ -29,6 +29,7 @@ import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.OFormat
+import uk.gov.hmrc.play.audit.model.ValidatedDataEvent
 
 sealed trait AuditResult
 object AuditResult {
@@ -68,7 +69,7 @@ trait AuditConnector {
       ec: ExecutionContext,
       writes: AuditFormat[T]
   ): Unit = {
-    given OFormat[T] = writes.format
+    implicit val f: OFormat[T] = writes.format
     sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
   }
 
@@ -102,6 +103,17 @@ trait AuditConnector {
         )
       )
     }
+
+  def sendValidatedEvent[T](event: ValidatedDataEvent[T])(implicit
+      hc: HeaderCarrier = HeaderCarrier(),
+      ec: ExecutionContext,
+      auditFormat: AuditFormat[T]
+  ): Future[AuditResult] = {
+    import io.scalaland.chimney.dsl._
+    implicit val oformat: OFormat[T]  = auditFormat.format
+    val extendedEvent = event.into[ExtendedDataEvent].withFieldComputed(_.detail, v => Json.toJson(v.detail)).transform
+    sendExtendedEvent(extendedEvent)
+  }
 
   def sendExtendedEvent(event: ExtendedDataEvent)(implicit
       hc: HeaderCarrier = HeaderCarrier(),

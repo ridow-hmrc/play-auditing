@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.play.audit.http.validation
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 
 import scala.language.experimental.macros
@@ -30,11 +31,11 @@ object AuditMacros {
     val symbol = tpe.typeSymbol
 
     val hasAnnotation = symbol.annotations.exists { ann =>
-      ann.tree.tpe.toString.contains("nonValidatedAnnotation")
+      ann.tree.tpe.toString.contains("CipAuditEventUnvalidated")
     }
 
     if (!hasAnnotation) {
-      c.abort(c.enclosingPosition, s"${symbol.name} must be annotated with @nonValidatedAnnotation")
+      c.abort(c.enclosingPosition, s"${symbol.name} must be annotated with @@CipAuditEventUnvalidated")
     }
 
     val formatTree = q"play.api.libs.json.Json.format[$tpe]"

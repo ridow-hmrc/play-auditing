@@ -45,6 +45,18 @@ case class ExtendedDataEvent(
     auditProvider: Option[String] = None
 )
 
+case class ValidatedDataEvent[T](
+    auditSource: String,
+    auditType: String,
+    eventId: String = UUID.randomUUID().toString,
+    tags: Map[String, String] = Map.empty,
+    detail: T,
+    generatedAt: Instant = Instant.now(),
+    truncationLog: TruncationLog = TruncationLog.Empty,
+    redactionLog: RedactionLog = RedactionLog.Empty,
+    auditProvider: Option[String] = None
+)
+
 case class DataCall(
     tags: Map[String, String],
     detail: Map[String, String],
