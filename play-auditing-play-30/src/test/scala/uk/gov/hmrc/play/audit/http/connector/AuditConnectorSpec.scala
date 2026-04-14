@@ -37,6 +37,7 @@ import play.api.libs.json.OFormat
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 import uk.gov.hmrc.play.audit.http.validation.JsonValidatorMacro
 import uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated
+import uk.gov.hmrc.play.audit.model.ValidatedDataEvent
 
 @CipAuditEventUnvalidated
 case class MyExampleAudit(userType: String, vrn: String)
@@ -205,6 +206,23 @@ class AuditConnectorSpec
     }
   }
 
+  "sendValidatedEvent" should {
+    val subscription =
+      Subscription("John", 25, List("one"), Set("two"), Address("nowhere avenue", "AB12 3CD", Option("UK")))
+
+    val validatedEvent = ValidatedDataEvent("source", "type", detail = subscription)
+
+    "send a validated event" in {
+      createConnector(enabledConfig).sendValidatedEvent(validatedEvent).futureValue shouldBe AuditResult.Success
+
+      val captor = ArgumentCaptor.forClass(classOf[JsValue])
+
+      verify(mockAuditChannel).send(any[String], captor.capture())(any[ExecutionContext])
+
+      // val capturedValue = captor.getValue()
+    }
+  }
+
   "sendExtendedEvent" should {
     val detail = Json.parse(
       """{"some-event": "value", "some-other-event": "other-value"}"""
@@ -325,7 +343,7 @@ class AuditConnectorSpec
 
       createConnector(enabledConfigWithProvider).sendExplicitAudit(
         "theAuditType",
-        Subscription("name", 40, List("list"), Set("Set"), Address("street", "postcode"))
+        Subscription("name", 40, List("list"), Set("Set"), Address("street", "postcode", None))
       )
 
       verifyAuditProviderIs("config-provider")

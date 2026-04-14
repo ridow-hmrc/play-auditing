@@ -110,7 +110,7 @@ trait AuditConnector {
       auditFormat: AuditFormat[T]
   ): Future[AuditResult] = {
     import io.scalaland.chimney.dsl._
-    implicit val oformat: OFormat[T]  = auditFormat.format
+    implicit val oformat: OFormat[T] = auditFormat.format
     val extendedEvent = event.into[ExtendedDataEvent].withFieldComputed(_.detail, v => Json.toJson(v.detail)).transform
     sendExtendedEvent(extendedEvent)
   }

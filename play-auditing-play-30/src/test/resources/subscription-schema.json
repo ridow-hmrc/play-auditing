@@ -27,11 +27,13 @@
         },
         "postcode": {
           "type": "string"
+        }, "country": {
+          "type": "string"
         }
       },
       "required": [
         "street",
-        "postcode"
+        "postcode", "country"
       ],
       "additionalProperties": false
     }
