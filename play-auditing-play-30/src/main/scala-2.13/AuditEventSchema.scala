@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.play.audit.http.validation
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
+import uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 
-object AuditMacros {
+object AuditEventSchema {
 
-  def nonvalidatedFormat[T]: AuditFormat[T] = macro nonvalidatedFormatImpl[T]
+
+  private val unvalidatedSchemaAnnotation               = classOf[CipAuditEventUnvalidated].getCanonicalName()
+
+  def unvalidatedFormat[T]: AuditFormat[T] = macro nonvalidatedFormatImpl[T]
 
   def nonvalidatedFormatImpl[T: c.WeakTypeTag](c: Context): c.Expr[AuditFormat[T]] = {
     import c.universe._

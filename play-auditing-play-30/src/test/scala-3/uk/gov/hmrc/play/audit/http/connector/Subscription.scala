@@ -21,9 +21,8 @@ import play.api.libs.json.OFormat
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
 import uk.gov.hmrc.play.audit.http.validation.AuditEventSchema
-import uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated
 
-@CipAuditEventUnvalidated
+@CipAuditEventSchema(schemaFile = "/subscription-schema.json")
 case class Subscription(name: String, age: Int, list: List[String], set: Set[String], address: Address)
 
 case class Address(street: String, postcode: String, country: Option[String])
@@ -32,5 +31,5 @@ object Address {
   implicit val format: OFormat[Address] = Json.format[Address]
 }
 object Subscription {
-  implicit val format: AuditFormat[Subscription] = AuditEventSchema.unvalidatedFormat[Subscription]
+  implicit val format: AuditFormat[Subscription] = AuditEventSchema.format[Subscription]
 }

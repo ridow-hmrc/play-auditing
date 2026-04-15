@@ -18,7 +18,7 @@ package uk.gov.hmrc.play.audit.http.validation
 
 
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.*
+import org.scalatest.matchers.should._
 import org.scalatest.{Inside, Inspectors}
 
 import scala.language.postfixOps

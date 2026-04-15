@@ -26,18 +26,20 @@ import java.time.LocalDate
 import scala.jdk.CollectionConverters.*
 import scala.quoted.*
 import scala.util.Random
+import uk.gov.hmrc.audit.http.validation.CipAuditEventSchema
+import uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated
 
-object JsonValidatorMacro:
+object AuditEventSchema:
 
-  private val cipSchemaAnnotation                  = "uk.gov.hmrc.audit.http.validation.CipAuditEventSchema"
-  private val nonValidatedAnnotation               = "uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated"
-  inline def nonvalidatedFormat[T]: AuditFormat[T] = ${ unvalidatedFormatImpl[T] }
+  private val cipSchemaAnnotation                  = classOf[CipAuditEventSchema].getCanonicalName() 
+  private val unvalidatedSchemaAnnotation               = classOf[CipAuditEventUnvalidated].getCanonicalName()
+  inline def unvalidatedFormat[T]: AuditFormat[T] = ${ unvalidatedFormatImpl[T] }
 
   def unvalidatedFormatImpl[T: Type](using Quotes): Expr[AuditFormat[T]] =
     import quotes.reflect.*
     val typeSymbol = TypeRepr.of[T].typeSymbol
-    if !typeSymbol.annotations.exists(_.tpe.show == nonValidatedAnnotation) then
-      report.errorAndAbort(s"${typeSymbol.name} must be annotated with @$nonValidatedAnnotation")
+    if !typeSymbol.annotations.exists(_.tpe.show == unvalidatedSchemaAnnotation) then
+      report.errorAndAbort(s"${typeSymbol.name} must be annotated with @$unvalidatedSchemaAnnotation")
 
     val format = JsMacroImpl.format[T]
 
@@ -45,9 +47,9 @@ object JsonValidatorMacro:
       new AuditFormat[T]($format)
     }
 
-  inline def generateValidatedJson[T]: AuditFormat[T] = ${ generateImpl[T] }
+  inline def format[T]: AuditFormat[T] = ${ generateFormatImpl[T] }
 
-  def generateImpl[T: Type](using Quotes): Expr[AuditFormat[T]] =
+  def generateFormatImpl[T: Type](using Quotes): Expr[AuditFormat[T]] =
     import quotes.reflect.*
 
     def buildJson(tpe: TypeRepr): JsValue =

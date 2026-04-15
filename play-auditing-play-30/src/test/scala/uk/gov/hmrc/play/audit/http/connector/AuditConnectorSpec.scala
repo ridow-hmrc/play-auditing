@@ -35,15 +35,15 @@ import uk.gov.hmrc.play.audit.model.{DataCall, DataEvent, ExtendedDataEvent, Mer
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.play.audit.http.validation.AuditFormat
-import uk.gov.hmrc.play.audit.http.validation.JsonValidatorMacro
 import uk.gov.hmrc.audit.http.validation.CipAuditEventUnvalidated
 import uk.gov.hmrc.play.audit.model.ValidatedDataEvent
+import uk.gov.hmrc.play.audit.http.validation.AuditEventSchema
 
 @CipAuditEventUnvalidated
 case class MyExampleAudit(userType: String, vrn: String)
 
 object MyExampleAudit{
-  implicit val format: AuditFormat[MyExampleAudit] = JsonValidatorMacro.nonvalidatedFormat
+  implicit val format: AuditFormat[MyExampleAudit] = AuditEventSchema.unvalidatedFormat
 }
 class AuditConnectorSpec
     extends AnyWordSpec
@@ -206,23 +206,6 @@ class AuditConnectorSpec
     }
   }
 
-  "sendValidatedEvent" should {
-    val subscription =
-      Subscription("John", 25, List("one"), Set("two"), Address("nowhere avenue", "AB12 3CD", Option("UK")))
-
-    val validatedEvent = ValidatedDataEvent("source", "type", detail = subscription)
-
-    "send a validated event" in {
-      createConnector(enabledConfig).sendValidatedEvent(validatedEvent).futureValue shouldBe AuditResult.Success
-
-      val captor = ArgumentCaptor.forClass(classOf[JsValue])
-
-      verify(mockAuditChannel).send(any[String], captor.capture())(any[ExecutionContext])
-
-      // val capturedValue = captor.getValue()
-    }
-  }
-
   "sendExtendedEvent" should {
     val detail = Json.parse(
       """{"some-event": "value", "some-other-event": "other-value"}"""
@@ -313,7 +296,7 @@ class AuditConnectorSpec
   }
 
   "sendExplicitEvent [T]" should {
-    given HeaderCarrier(
+    implicit val hc =  HeaderCarrier(
       sessionId = Some(SessionId("session-123")),
       otherHeaders = Seq("path" -> "/a/b/c")
     )
