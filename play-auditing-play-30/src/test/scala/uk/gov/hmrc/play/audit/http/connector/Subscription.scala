@@ -27,8 +27,9 @@ case class Subscription(name: String, age: Int, list: List[String], set: Set[Str
 
 case class Address(street: String, postcode: String, country: Option[String])
 
-object Address:
+object Address {
   implicit val format: OFormat[Address] = Json.format[Address]
-
-object Subscription:
+}
+object Subscription {
   implicit val format: AuditFormat[Subscription] = JsonValidatorMacro.generateValidatedJson[Subscription]
+}

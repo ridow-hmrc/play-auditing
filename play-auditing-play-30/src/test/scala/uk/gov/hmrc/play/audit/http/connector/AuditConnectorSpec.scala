@@ -42,9 +42,9 @@ import uk.gov.hmrc.play.audit.model.ValidatedDataEvent
 @CipAuditEventUnvalidated
 case class MyExampleAudit(userType: String, vrn: String)
 
-object MyExampleAudit:
+object MyExampleAudit{
   implicit val format: AuditFormat[MyExampleAudit] = JsonValidatorMacro.nonvalidatedFormat
-
+}
 class AuditConnectorSpec
     extends AnyWordSpec
     with Matchers
